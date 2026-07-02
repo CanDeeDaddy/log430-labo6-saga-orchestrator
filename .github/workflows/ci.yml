@@ -9,14 +9,12 @@ on:
 jobs:
   build-and-test:
     runs-on: self-hosted
-
     steps:
       - name: Checkout du code
         uses: actions/checkout@v4
 
       - name: Normaliser les fins de ligne
-        run: |
-          find . -name "*.sh" -exec sed -i 's/\r$//' {} + 2>/dev/null || true
+        run: find . -name "*.sh" -exec sed -i 's/\r$//' {} + 2>/dev/null || true
 
       - name: Installer les dependances
         run: |
@@ -25,16 +23,16 @@ jobs:
           ./venv/bin/pip install -r requirements.txt
 
       - name: Verification de syntaxe Python
-        run: |
-          ./venv/bin/python -m py_compile src/saga_orchestrator.py src/config.py src/order_saga_state.py src/controllers/*.py src/handlers/*.py
+        run: ./venv/bin/python -m py_compile src/saga_orchestrator.py src/config.py src/order_saga_state.py src/controllers/*.py src/handlers/*.py
 
       - name: Executer les tests
-        run: |
-          if [ -d tests ]; then ./venv/bin/python -m pytest tests/ -p no:cacheprovider; else echo "Aucun dossier tests, etape ignoree"; fi
+        run: if [ -d tests ]; then ./venv/bin/python -m pytest tests/ -p no:cacheprovider; else echo "Aucun dossier tests"; fi
 
       - name: Build de l'image Docker
-        run: |
-          docker build -t saga-orchestrator:ci .
+        run: docker build -t saga-orchestrator:ci .
 
       - name: Nettoyage des caches
-        if:
+        if: always()
+        run: |
+          sudo chown -R github-runner:github-runner . 2>/dev/null || true
+          find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
